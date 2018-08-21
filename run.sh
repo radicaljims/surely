@@ -1,1 +1,1 @@
-./build/target/ogl.app/Contents/MacOs/ogl > out.ppm
+./rebuild.sh && ./build/target/ogl.app/Contents/MacOs/ogl > out.ppm

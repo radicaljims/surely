@@ -51,7 +51,7 @@ link_libraries(
   ${OPENGL_LIBRARIES}
 )
 
-set(SOURCES src/main.cpp src/vec3.h)
+set(SOURCES src/main.cpp)
 add_executable(${APPLICATION_NAME} ${GUI_TYPE} ${SOURCES})
 
 set_property(TARGET ${APPLICATION_NAME} PROPERTY CXX_STANDARD 11)

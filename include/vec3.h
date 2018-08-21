@@ -64,6 +64,11 @@ namespace mathy
         return s * a;
     }
 
+    inline vec3 lerp(const vec3& a, const vec3& b, float t)
+    {
+        return ((1.0 - t) * a) + (t * b);
+    }
+
     inline std::istream& operator>> (std::istream &is, vec3 &a)
     {
         is >> a.x;
