@@ -14,16 +14,16 @@ vec3 point_on_sphere()
 }
 
 // TODO: still haven't done that t-windowing thing
-vec3 color(std::vector<sphere> spheres, const ray& r)
+vec3 color(const primitives& ps, const ray& r)
 {
-    intersections is = intersect(spheres, r);
+    intersections is = intersect(ps, r);
 
     if (is.size())
     {
         auto closest = is.begin();
 
         vec3 target = closest->p + closest->normal + point_on_sphere();
-        return 0.5 * color(spheres, { closest->p, target - closest->p });
+        return 0.5 * color(ps, { closest->p, target - closest->p });
     }
 
     vec3 unit_direction = normalize(r.d);
@@ -54,6 +54,10 @@ int main()
 
     };
 
+    primitives ps;
+
+    std::for_each(spheres.begin(), spheres.end(), [&] (const sphere& s) { ps.push_back(make_sphere_primitive(s)); });
+
     for (int j = ny - 1; j >= 0; j--)
     {
         for (int i = 0; i < nx; i++)
@@ -67,7 +71,7 @@ int main()
 
                 ray r = get_ray(c, u, v);
 
-                col = col + color(spheres, r);
+                col = col + color(ps, r);
             }
 
             // TODO: maybe a running average would be cool

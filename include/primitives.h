@@ -28,8 +28,6 @@ namespace mathy
         return lhs.t < rhs.t;
     }
 
-    using intersections = std::set<intersection>;
-
     intersection intersect(const sphere& s, const ray& r)
     {
         vec3 oc = r.o - s.center;
@@ -49,13 +47,28 @@ namespace mathy
         return record;
     }
 
-    intersections intersect(const spheres& ss, const ray& r)
+    inline bool hit_sphere(const sphere& s, const ray& r)
+    {
+        return intersect(s, r).t > 0;
+    }
+
+    using intersections = std::set<intersection>;
+
+    using primitive  = std::function<intersection(const ray&)>;
+    using primitives = std::vector<primitive>;
+
+    primitive make_sphere_primitive(const sphere& ss)
+    {
+        return [=](const ray& r) { return intersect(ss, r); };
+    }
+
+    intersections intersect(const primitives& ps, const ray& r)
     {
         intersections is;
 
-        for(auto&& s : ss)
+        for(auto&& p : ps)
         {
-            auto i = intersect(s, r);
+            auto i = p(r);
 
             if (i.t > 0.0f)
             {
@@ -64,11 +77,6 @@ namespace mathy
         }
 
         return is;
-    }
-
-    inline bool hit_sphere(const sphere& s, const ray& r)
-    {
-        return intersect(s, r).t > 0;
     }
 
 }
