@@ -4,31 +4,26 @@
 #include "vec3.h"
 #include "ray.h"
 #include "primitives.h"
+#include "camera.h"
 
 using namespace mathy;
 
+vec3 point_on_sphere()
+{
+    return normalize( { float(drand48()), float(drand48()), float(drand48()) } );
+}
+
+// TODO: still haven't done that t-windowing thing
 vec3 color(std::vector<sphere> spheres, const ray& r)
 {
-    // for(auto&& s : spheres)
-    // {
-    //     intersection i = intersect(s, r);
-
-    //     // We can only hit one sphere for now I guess
-    //     if (i.t > 0.0)
-    //     {
-    //         return 0.5 * (i.normal + vec3({.x = 1.0, .y = 1.0, .z = 1.0}));
-    //     }
-    // }
-
     intersections is = intersect(spheres, r);
 
     if (is.size())
     {
         auto closest = is.begin();
 
-        // std::cerr << closest->t << std::endl;
-
-        return 0.5 * (closest->normal + vec3({ .x = 1.0, .y = 1.0, .z = 1.0 }));
+        vec3 target = closest->p + closest->normal + point_on_sphere();
+        return 0.5 * color(spheres, { closest->p, target - closest->p });
     }
 
     vec3 unit_direction = normalize(r.d);
@@ -42,15 +37,13 @@ vec3 color(std::vector<sphere> spheres, const ray& r)
 
 int main()
 {
-    int nx = 200;
-    int ny = 100;
+    int nx = 400;
+    int ny = 200;
+    int ns = 100;
 
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
-    vec3 llc        = { .x = -2.0, .y = -1.0, .z = -1.0 };
-    vec3 horizontal = { .x =  4.0, .y =  0.0, .z =  0.0 };
-    vec3 vertical   = { .x =  0.0, .y =  2.0, .z =  0.0 };
-    vec3 origin     = { .x =  0.0, .y =  0.0, .z =  0.0 };
+    renderer::camera c = renderer::DEFAULT_CAMERA;
 
     std::vector<sphere> spheres = {
         { .center = { .x = 0.0, .y = 0.0, .z = -1.0 },
@@ -65,17 +58,24 @@ int main()
     {
         for (int i = 0; i < nx; i++)
         {
-            float u = float(i) / float(nx);
-            float v = float(j) / float(ny);
+            vec3 col = { 0.0, 0.0, 0.0 };
 
-            ray r = { .o = origin,
-                      .d = (llc + (u * horizontal) +  (v * vertical)) };
+            for(int s = 0; s < ns; s++)
+            {
+                float u = float(i + drand48()) / float(nx);
+                float v = float(j + drand48()) / float(ny);
 
-            vec3 col = color(spheres, r);
+                ray r = get_ray(c, u, v);
 
-            int ir = int(255.99 * col.x);
-            int ig = int(255.99 * col.y);
-            int ib = int(255.99 * col.z);
+                col = col + color(spheres, r);
+            }
+
+            // TODO: maybe a running average would be cool
+            col = 1.0 / float(ns) * col;
+
+            int ir = int(255.99 * std::sqrt(col.x));
+            int ig = int(255.99 * std::sqrt(col.y));
+            int ib = int(255.99 * std::sqrt(col.z));
 
             std::cout << ir << " " << ig << " " << ib << std::endl;
         }
