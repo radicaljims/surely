@@ -4,7 +4,9 @@
 #include <set>
 
 #include "ray.h"
-
+#include "intersection.h"
+#include "material.h"
+#include "shading.h"
 
 namespace mathy
 {
@@ -12,23 +14,13 @@ namespace mathy
     {
         vec3 center;
         float radius;
+
+        materials::material m;
     };
 
     using spheres = std::vector<sphere>;
 
-    struct intersection
-    {
-        float t;
-        vec3  p;
-        vec3  normal;
-    };
-
-    bool operator< (const struct intersection& lhs, const struct intersection& rhs)
-    {
-        return lhs.t < rhs.t;
-    }
-
-    intersection intersect(const sphere& s, const ray& r)
+    shading::shade intersect(const sphere& s, const ray& r)
     {
         vec3 oc = r.o - s.center;
 
@@ -38,28 +30,28 @@ namespace mathy
 
         float disc = (b * b) - (4.0f * a * c);
 
-        intersection record;
+        geometry::intersection record;
 
         record.t      = disc < 0.0f ? -1.0f : (-b - sqrt(disc)) / (2.0f * a);
         record.p      = at(r, record.t);
         record.normal = normalize(record.p - s.center);
 
-        return record;
+        return { record, s.m };
     }
 
     inline bool hit_sphere(const sphere& s, const ray& r)
     {
-        return intersect(s, r).t > 0;
+        return intersect(s, r).i.t > 0;
     }
 
-    using intersections = std::set<intersection>;
+    using intersections = std::set<shading::shade>;
 
-    using primitive  = std::function<intersection(const ray&)>;
+    using primitive  = std::function<shading::shade(const ray&)>;
     using primitives = std::vector<primitive>;
 
-    primitive make_sphere_primitive(const sphere& ss)
+    primitive make_sphere_primitive(const sphere& s)
     {
-        return [=](const ray& r) { return intersect(ss, r); };
+        return [=](const ray& r) { return intersect(s, r); };
     }
 
     intersections intersect(const primitives& ps, const ray& r)
@@ -68,11 +60,11 @@ namespace mathy
 
         for(auto&& p : ps)
         {
-            auto i = p(r);
+            auto s = p(r);
 
-            if (i.t > 0.0f)
+            if (s.i.t > 0.0f)
             {
-                is.insert(i);
+                is.insert(s);
             }
         }
 

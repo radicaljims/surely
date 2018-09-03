@@ -34,6 +34,11 @@ namespace mathy
         return { s * a.x, s * a.y, s * a.z };
     }
 
+    inline vec3 operator* (const vec3& a, const vec3& b)
+    {
+        return { a.x * b.x, a.y * b.y, b.z * b.z };
+    }
+
     inline vec3 cross(const vec3& a, const vec3& b)
     {
         return {(a.y * b.z) - (a.z * b.y),
@@ -86,4 +91,15 @@ namespace mathy
 
         return os;
     }
+
+    vec3 point_on_sphere()
+    {
+        return normalize( { float(drand48()), float(drand48()), float(drand48()) } );
+    }
+
+    vec3 reflect(const vec3& v, const vec3& n)
+    {
+        return v - (2.0f * dot(v, n) * n);
+    }
+
 }

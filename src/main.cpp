@@ -4,17 +4,13 @@
 #include "vec3.h"
 #include "ray.h"
 #include "primitives.h"
+#include "material.h"
 #include "camera.h"
 
 using namespace mathy;
 
-vec3 point_on_sphere()
-{
-    return normalize( { float(drand48()), float(drand48()), float(drand48()) } );
-}
-
 // TODO: still haven't done that t-windowing thing
-vec3 color(const primitives& ps, const ray& r)
+vec3 color(const primitives& ps, const ray& r, int depth)
 {
     intersections is = intersect(ps, r);
 
@@ -22,8 +18,19 @@ vec3 color(const primitives& ps, const ray& r)
     {
         auto closest = is.begin();
 
-        vec3 target = closest->p + closest->normal + point_on_sphere();
-        return 0.5 * color(ps, { closest->p, target - closest->p });
+        // vec3 target = closest->i.p + closest->i.normal + point_on_sphere();
+        // return 0.5 * color(ps, { closest->i.p, target - closest->i.p });
+
+        materials::material_interaction mat = closest->m(r, closest->i);
+
+        if (depth < 50 && mat.valid)
+        {
+            return mat.attenuation * color(ps, mat.scattered, depth + 1);
+        }
+        else
+        {
+            return  { 0.0, 0.0, 0.0 };
+        }
     }
 
     vec3 unit_direction = normalize(r.d);
@@ -45,13 +52,23 @@ int main()
 
     renderer::camera c = renderer::DEFAULT_CAMERA;
 
+    auto empty_material      = materials::make_empty_material({ 0.0, 0.0, 0.0 });
+
+    auto lambertian_purpley = materials::make_lambertian_material({ 0.3, 0.5, 0.5 });
+    auto lambertian_reddish = materials::make_lambertian_material({ 0.8, 0.3, 0.1 });
+
+    // auto metal_material      = materials::make_metal_material({ 0.8, 0.6, 0.2 });
+    auto metal_material      = materials::make_metal_material({ 0.8, 0.8, 0.8 });
+
     std::vector<sphere> spheres = {
         { .center = { .x = 0.0, .y = 0.0, .z = -1.0 },
-          .radius = 0.5 },
+          .radius = 0.5, .m = metal_material },
+
+        { .center = { .x = 2.0, .y = 0.0, .z = -1.0 },
+          .radius = 0.5, .m = lambertian_reddish },
 
         { .center = { .x = 0.0, .y = -100.5, .z = -1.0 },
-          .radius = 100 }
-
+          .radius = 100, .m = lambertian_purpley }
     };
 
     primitives ps;
@@ -71,7 +88,7 @@ int main()
 
                 ray r = get_ray(c, u, v);
 
-                col = col + color(ps, r);
+                col = col + color(ps, r, 0);
             }
 
             // TODO: maybe a running average would be cool
